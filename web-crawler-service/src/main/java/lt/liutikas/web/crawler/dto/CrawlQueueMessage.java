@@ -1,17 +1,16 @@
 package lt.liutikas.web.crawler.dto;
 
 import java.io.Serializable;
-import java.net.URL;
 
 public class CrawlQueueMessage implements Serializable {
 
-    private URL url;
+    private String url;
 
-    public URL getUrl() {
+    public String getUrl() {
         return url;
     }
 
-    public void setUrl(URL url) {
+    public void setUrl(String url) {
         this.url = url;
     }
 }
