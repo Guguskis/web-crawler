@@ -18,7 +18,7 @@
 
     <modules>
         <module>page-service</module>
-        <module>crawler-service</module>
+        <module>web-crawler-service</module>
     </modules>
 
     <properties>
