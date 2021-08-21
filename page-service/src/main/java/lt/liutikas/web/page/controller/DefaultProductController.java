@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 public class DefaultProductController implements ProductController {
@@ -21,8 +22,8 @@ public class DefaultProductController implements ProductController {
     }
 
     @Override
-    public ResponseEntity<List<NoBodyPageDto>> getPages() {
-        return ResponseEntity.ok(pageService.getPages());
+    public ResponseEntity<List<NoBodyPageDto>> getPages(Optional<Boolean> parsed) {
+        return ResponseEntity.ok(pageService.getPages(parsed));
     }
 
     @Override

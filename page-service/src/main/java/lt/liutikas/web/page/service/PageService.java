@@ -28,14 +28,21 @@ public class PageService {
         this.pageRepository = pageRepository;
     }
 
-    public List<NoBodyPageDto> getPages() {
-        List<Page> pages = pageRepository.findAllExcludeBody();
+    public List<NoBodyPageDto> getPages(Optional<Boolean> parsed) {
+
+        List<Page> pages;
+
+        if (parsed.isEmpty()) {
+            pages = pageRepository.findAllExcludeBodyByParsed();
+        } else {
+            pages = pageRepository.findAllExcludeBodyByParsed(parsed.get());
+        }
 
         List<NoBodyPageDto> noBodyPages = pages.stream()
                 .map(pageAssembler::assembleNoBodyPage)
                 .collect(Collectors.toList());
 
-        LOG.info("Returned pages");
+        LOG.info("Returned pages by query { parsed: {} }", parsed.isPresent() ? parsed.get() : "null");
 
         return noBodyPages;
     }

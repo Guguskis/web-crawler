@@ -8,12 +8,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RequestMapping("/api/page")
 public interface ProductController {
 
     @GetMapping
-    ResponseEntity<List<NoBodyPageDto>> getPages();
+    ResponseEntity<List<NoBodyPageDto>> getPages(@RequestParam(required = false) Optional<Boolean> parsed);
 
     @GetMapping("/{id}")
     ResponseEntity<Page> getPageById(@PathVariable String id);

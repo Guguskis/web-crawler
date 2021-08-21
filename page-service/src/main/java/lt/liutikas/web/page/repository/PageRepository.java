@@ -11,6 +11,8 @@ import java.util.List;
 public interface PageRepository extends MongoRepository<Page, String> {
 
     @Query(value = "{}", fields = "{url : 1, parsed : 1, childrenUrls: 1}")
-    List<Page> findAllExcludeBody();
+    List<Page> findAllExcludeBodyByParsed();
 
+    @Query(value = "{ parsed: ?0 }", fields = "{url : 1, parsed : 1, childrenUrls: 1}")
+    List<Page> findAllExcludeBodyByParsed(Boolean parsed);
 }
