@@ -17,8 +17,8 @@
     <description>web-crawler</description>
 
     <modules>
-        <module>data-storage</module>
-        <module>web-crawler-service</module>
+        <module>page-service</module>
+        <module>crawler-service</module>
     </modules>
 
     <properties>
