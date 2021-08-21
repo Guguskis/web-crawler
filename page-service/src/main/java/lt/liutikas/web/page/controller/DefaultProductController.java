@@ -3,6 +3,7 @@ package lt.liutikas.web.page.controller;
 import lt.liutikas.web.page.api.ProductController;
 import lt.liutikas.web.page.dto.CreatePageDto;
 import lt.liutikas.web.page.dto.NoBodyPageDto;
+import lt.liutikas.web.page.dto.UpdatePageDto;
 import lt.liutikas.web.page.model.Page;
 import lt.liutikas.web.page.service.PageService;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,11 @@ public class DefaultProductController implements ProductController {
     @Override
     public ResponseEntity<NoBodyPageDto> createPage(CreatePageDto createPageDto) {
         return ResponseEntity.ok(pageService.createPage(createPageDto));
+    }
+
+    @Override
+    public ResponseEntity<NoBodyPageDto> updatePage(String id, UpdatePageDto updatePageDto) {
+        return ResponseEntity.ok(pageService.updatePage(id, updatePageDto));
     }
 
 }

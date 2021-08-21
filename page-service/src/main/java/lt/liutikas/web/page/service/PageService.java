@@ -4,6 +4,7 @@ import lt.liutikas.web.page.assembler.PageAssembler;
 import lt.liutikas.web.page.configuration.exception.NotFoundException;
 import lt.liutikas.web.page.dto.CreatePageDto;
 import lt.liutikas.web.page.dto.NoBodyPageDto;
+import lt.liutikas.web.page.dto.UpdatePageDto;
 import lt.liutikas.web.page.model.Page;
 import lt.liutikas.web.page.repository.PageRepository;
 import org.slf4j.Logger;
@@ -60,5 +61,18 @@ public class PageService {
 
         LOG.info(String.format("Page created { id: \"%s\"}", createdPage.getId()));
         return pageAssembler.assembleNoBodyPage(createdPage);
+    }
+
+    public NoBodyPageDto updatePage(String id, UpdatePageDto updatePageDto) {
+
+        Page page = getPageById(id);
+
+        if (updatePageDto.isParsed() != null) {
+            page.setParsed(updatePageDto.isParsed());
+        }
+
+        pageRepository.save(page);
+
+        return pageAssembler.assembleNoBodyPage(page);
     }
 }
