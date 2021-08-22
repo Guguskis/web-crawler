@@ -10,11 +10,11 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 
 @Repository
-public class PageRepository {
+public class PageClient {
 
     private final RestTemplate restTemplate;
 
-    public PageRepository(@Qualifier("page-service") RestTemplate restTemplate) {
+    public PageClient(@Qualifier("page-service") RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 

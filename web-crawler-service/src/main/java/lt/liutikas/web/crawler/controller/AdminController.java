@@ -2,7 +2,7 @@ package lt.liutikas.web.crawler.controller;
 
 import lt.liutikas.web.crawler.dto.CrawlQueueMessage;
 import lt.liutikas.web.crawler.dto.NoBodyPageDto;
-import lt.liutikas.web.crawler.repository.PageRepository;
+import lt.liutikas.web.crawler.repository.PageClient;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,11 +14,11 @@ import java.util.Optional;
 @RequestMapping("/api/admin")
 public class AdminController {
 
-    private final PageRepository pageRepository;
+    private final PageClient pageClient;
     private final RabbitTemplate rabbitTemplate;
 
-    public AdminController(PageRepository pageRepository, RabbitTemplate rabbitTemplate) {
-        this.pageRepository = pageRepository;
+    public AdminController(PageClient pageClient, RabbitTemplate rabbitTemplate) {
+        this.pageClient = pageClient;
         this.rabbitTemplate = rabbitTemplate;
     }
 
@@ -26,9 +26,9 @@ public class AdminController {
     public ResponseEntity<List<NoBodyPageDto>> getPages(@RequestParam(required = false) Optional<Boolean> parsed) {
 
         if (parsed.isPresent()) {
-            return ResponseEntity.ok(pageRepository.getPagesByParsed(parsed.get()));
+            return ResponseEntity.ok(pageClient.getPagesByParsed(parsed.get()));
         } else {
-            return ResponseEntity.ok(pageRepository.getPages());
+            return ResponseEntity.ok(pageClient.getPages());
         }
     }
 

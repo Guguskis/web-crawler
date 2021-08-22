@@ -3,7 +3,7 @@ package lt.liutikas.web.crawler.service;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import lt.liutikas.web.crawler.dto.CrawlQueueMessage;
-import lt.liutikas.web.crawler.repository.PageRepository;
+import lt.liutikas.web.crawler.repository.PageClient;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -29,15 +29,13 @@ public class CrawlingService {
 
 
     private final RabbitTemplate rabbitTemplate;
-    private final PageRepository pageRepository;
+    private final PageClient pageClient;
     private final RestTemplate redditEndpoint;
-    private final LinkService linkService;
 
-    public CrawlingService(RabbitTemplate rabbitTemplate, PageRepository pageRepository, @Qualifier("reddit") RestTemplate restTemplate, LinkService linkService) {
+    public CrawlingService(RabbitTemplate rabbitTemplate, PageClient pageClient, @Qualifier("reddit") RestTemplate restTemplate) {
         this.rabbitTemplate = rabbitTemplate;
-        this.pageRepository = pageRepository;
+        this.pageClient = pageClient;
         this.redditEndpoint = restTemplate;
-        this.linkService = linkService;
     }
 
     public void processPage(CrawlQueueMessage message) {
