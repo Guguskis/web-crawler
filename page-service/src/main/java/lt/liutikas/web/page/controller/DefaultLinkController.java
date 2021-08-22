@@ -23,4 +23,9 @@ public class DefaultLinkController implements LinkController {
         return ResponseEntity.ok(linkService.saveLinks(createLinkDtos));
     }
 
+    @Override
+    public ResponseEntity<List<Link>> getConnections(String id) {
+        return ResponseEntity.ok(linkService.getConnections(id));
+    }
+
 }

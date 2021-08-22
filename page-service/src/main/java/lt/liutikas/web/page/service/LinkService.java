@@ -1,6 +1,7 @@
 package lt.liutikas.web.page.service;
 
 import lt.liutikas.web.page.configuration.exception.BadRequestException;
+import lt.liutikas.web.page.configuration.exception.NotFoundException;
 import lt.liutikas.web.page.dto.CreateLinkDto;
 import lt.liutikas.web.page.model.Connection;
 import lt.liutikas.web.page.model.Link;
@@ -16,6 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @Service
 public class LinkService {
@@ -36,7 +38,7 @@ public class LinkService {
 
         createLinkDtos
                 .stream().filter(this::filterValidDtos)
-                .forEach(tryAddSavedLink(savedLinks));
+                .forEach(tryAddSavedLink(savedLinks)); // todo change from forEach to batch
 
         LOG.info("Saved links batch { linkCount: {}, savedLinkCount: {} }", createLinkDtos.size(), savedLinks.size());
 
@@ -104,5 +106,30 @@ public class LinkService {
         }
 
         return link.get();
+    }
+
+    public List<Link> getConnections(String id) {
+
+        Optional<Link> linkOptional = linkRepository.findById(id);
+
+        if (linkOptional.isEmpty()) {
+            throw new NotFoundException(String.format("Link not found { id: \"%s\"}", id));
+        }
+
+        Link link = linkOptional.get();
+
+        List<Connection> connections = connectionRepository.findByLinkAOrLinkB(link, link);
+        List<Link> links = connections.stream()
+                .map(connection -> {
+                    boolean connectionIsLinkA = connection.getLinkA().getId().equals(link.getId());
+                    if (!connectionIsLinkA) {
+                        return connection.getLinkA();
+                    } else {
+                        return connection.getLinkB();
+                    }
+                }).collect(Collectors.toList());
+
+        LOG.info("Returned link connections { id: \"{}\"}", id);
+        return links;
     }
 }
