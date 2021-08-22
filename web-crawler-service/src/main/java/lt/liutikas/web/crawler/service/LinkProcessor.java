@@ -2,6 +2,7 @@ package lt.liutikas.web.crawler.service;
 
 import lt.liutikas.web.crawler.configuration.MessageQueueConfiguration;
 import lt.liutikas.web.crawler.dto.LinkQueueMessage;
+import lt.liutikas.web.crawler.model.Link;
 import lt.liutikas.web.crawler.model.LinkProcessStatus;
 import lt.liutikas.web.crawler.repository.LinkClient;
 import lt.liutikas.web.crawler.repository.PageClient;
@@ -26,8 +27,8 @@ public class LinkProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(LinkProcessor.class);
 
     private final RabbitTemplate rabbitTemplate;
-    private final PageClient pageClient;
     private final RestTemplate redditEndpoint;
+    private final PageClient pageClient;
     private final LinkClient linkClient;
 
     public LinkProcessor(RabbitTemplate rabbitTemplate, PageClient pageClient, @Qualifier("reddit") RestTemplate restTemplate, LinkClient linkClient) {
@@ -48,24 +49,26 @@ public class LinkProcessor {
 
         Document pageBody = getPageBody(url);
 
-        List<String> validUrls = pageBody
+        List<String> urls = pageBody
                 .getElementsByAttribute("href").stream()
                 .map(this::parseUrl)
                 .filter(this::isCrawlableUrl)
                 .filter(this::isRedditUrl)
                 .collect(Collectors.toList());
 
-        validUrls = validUrls.stream()
-                .filter(validUrl -> linkClient.save(validUrl, message.getUrl()))
+        List<Link> savedLinks = linkClient.save(urls, message.getUrl());
+        List<String> savedUrls = savedLinks.stream()
+                .map(Link::getUrl)
+                .map(URL::toString)
                 .collect(Collectors.toList());
 
         LOG.info("Parsed links for page { url:\"{}\" }", url);
 
-        validUrls.stream()
+        savedUrls.stream()
                 .map(this::assembleQueueMessage)
                 .forEach(this::addToQueue);
 
-        LOG.info("Added new messages to queue { queue: \"{}\", urlCount: {}}", MessageQueueConfiguration.LINK_PROCESSING_QUEUE, validUrls.size());
+        LOG.info("Added new messages to queue { queue: \"{}\", messageCount: {}}", MessageQueueConfiguration.LINK_PROCESSING_QUEUE, savedUrls.size());
 
         return LinkProcessStatus.SUCCESS;
     }

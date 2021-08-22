@@ -8,10 +8,14 @@ import lt.liutikas.web.page.repository.ConnectionRepository;
 import lt.liutikas.web.page.repository.LinkRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.net.URL;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 @Service
 public class LinkService {
@@ -26,15 +30,34 @@ public class LinkService {
         this.connectionRepository = connectionRepository;
     }
 
-//    public List<Link> saveUniqueLinks(List<CreateLinkDto> createLinkDtos) {
+    public List<Link> saveLinks(List<CreateLinkDto> createLinkDtos) {
 
-    // todo
-    // save unique links
-    // save connections
-    // return saved links
+        List<Link> savedLinks = new LinkedList<>();
 
-//        return null;
-//    }
+        createLinkDtos
+                .stream().filter(this::filterValidDtos)
+                .forEach(tryAddSavedLink(savedLinks));
+
+        LOG.info("Saved links batch { linkCount: {}, savedLinkCount: {} }", createLinkDtos.size(), savedLinks.size());
+
+        return savedLinks;
+    }
+
+    private Consumer<CreateLinkDto> tryAddSavedLink(List<Link> savedLinks) {
+        return createLinkDto -> {
+            try {
+                savedLinks.add(saveLink(createLinkDto));
+            } catch (DuplicateKeyException e) {
+                // ignore invalid link
+            }
+        };
+    }
+
+    private boolean filterValidDtos(CreateLinkDto createLinkDto) {
+        boolean urlsDistinct = !createLinkDto.getUrl().equals(createLinkDto.getSourceUrl());
+
+        return urlsDistinct;
+    }
 
     public Link saveLink(CreateLinkDto createLinkDto) {
         assertValidRequest(createLinkDto);
@@ -43,7 +66,6 @@ public class LinkService {
         Link sourceLink = upsertLink(createLinkDto.getSourceUrl());
         saveConnection(link, sourceLink);
 
-        LOG.info("Saved new link { url: \"{}\", \"{}\" }", createLinkDto.getUrl(), createLinkDto.getSourceUrl());
         return link;
     }
 

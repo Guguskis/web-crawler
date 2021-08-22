@@ -2,18 +2,16 @@ package lt.liutikas.web.crawler.repository;
 
 import lt.liutikas.web.crawler.dto.CreateLinkDto;
 import lt.liutikas.web.crawler.model.Link;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class LinkClient {
-
-    private static final Logger LOG = LoggerFactory.getLogger(LinkClient.class);
 
     private final RestTemplate pageServiceEndpoint;
 
@@ -21,20 +19,25 @@ public class LinkClient {
         this.pageServiceEndpoint = restTemplate;
     }
 
-    public boolean save(String url, String sourceUrl) {
-        CreateLinkDto createLinkDto = new CreateLinkDto();
-        createLinkDto.setUrl(url);
-        createLinkDto.setSourceUrl(sourceUrl);
-        try {
-            pageServiceEndpoint.postForObject("/api/link", createLinkDto, Link.class);
-            return true;
-        } catch (RestClientException e) {
-            boolean is4xxClientError = ((HttpClientErrorException.BadRequest) e).getStatusCode().is4xxClientError();
-            if (!is4xxClientError) {
-                LOG.warn("Failed to save link { message: \"{}\" }", e.getMessage());
-            }
-            return false;
-        }
+
+    public List<Link> save(List<String> urls, String sourceUrl) {
+
+        List<CreateLinkDto> request = urls.stream()
+                .map(assembleRequest(sourceUrl))
+                .collect(Collectors.toList());
+
+        Link[] savedLinks = pageServiceEndpoint.postForObject("/api/link/batch", request, Link[].class);
+
+        return List.of(savedLinks);
+    }
+
+    private Function<String, CreateLinkDto> assembleRequest(String sourceUrl) {
+        return url -> {
+            CreateLinkDto createLinkDto = new CreateLinkDto();
+            createLinkDto.setUrl(url);
+            createLinkDto.setSourceUrl(sourceUrl);
+            return createLinkDto;
+        };
     }
 
 }
