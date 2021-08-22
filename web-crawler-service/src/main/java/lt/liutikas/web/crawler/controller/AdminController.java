@@ -1,6 +1,7 @@
 package lt.liutikas.web.crawler.controller;
 
-import lt.liutikas.web.crawler.dto.CrawlQueueMessage;
+import lt.liutikas.web.crawler.configuration.MessageQueueConfiguration;
+import lt.liutikas.web.crawler.dto.LinkQueueMessage;
 import lt.liutikas.web.crawler.dto.NoBodyPageDto;
 import lt.liutikas.web.crawler.repository.PageClient;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -33,8 +34,8 @@ public class AdminController {
     }
 
     @PostMapping
-    public void addMessageToQueue(@RequestBody CrawlQueueMessage message) {
-        rabbitTemplate.convertAndSend("crawl-queue", message);
+    public void addMessageToQueue(@RequestBody LinkQueueMessage message) {
+        rabbitTemplate.convertAndSend(MessageQueueConfiguration.LINK_PROCESSING_QUEUE, message);
     }
 
 }

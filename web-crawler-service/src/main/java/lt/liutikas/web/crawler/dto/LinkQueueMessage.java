@@ -2,7 +2,7 @@ package lt.liutikas.web.crawler.dto;
 
 import java.io.Serializable;
 
-public class CrawlQueueMessage implements Serializable {
+public class LinkQueueMessage implements Serializable {
 
     private String url;
 

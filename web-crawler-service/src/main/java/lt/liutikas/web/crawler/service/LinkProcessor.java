@@ -1,8 +1,8 @@
 package lt.liutikas.web.crawler.service;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import lt.liutikas.web.crawler.dto.CrawlQueueMessage;
+import lt.liutikas.web.crawler.configuration.MessageQueueConfiguration;
+import lt.liutikas.web.crawler.dto.LinkQueueMessage;
+import lt.liutikas.web.crawler.model.LinkProcessStatus;
 import lt.liutikas.web.crawler.repository.LinkClient;
 import lt.liutikas.web.crawler.repository.PageClient;
 import org.jsoup.Jsoup;
@@ -17,35 +17,33 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class CrawlingService {
+public class LinkProcessor {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CrawlingService.class);
-
+    private static final Logger LOG = LoggerFactory.getLogger(LinkProcessor.class);
 
     private final RabbitTemplate rabbitTemplate;
     private final PageClient pageClient;
     private final RestTemplate redditEndpoint;
     private final LinkClient linkClient;
 
-    public CrawlingService(RabbitTemplate rabbitTemplate, PageClient pageClient, @Qualifier("reddit") RestTemplate restTemplate, LinkClient linkClient) {
+    public LinkProcessor(RabbitTemplate rabbitTemplate, PageClient pageClient, @Qualifier("reddit") RestTemplate restTemplate, LinkClient linkClient) {
         this.rabbitTemplate = rabbitTemplate;
         this.pageClient = pageClient;
         this.redditEndpoint = restTemplate;
         this.linkClient = linkClient;
     }
 
-    public void processPage(CrawlQueueMessage message) {
+    public LinkProcessStatus process(LinkQueueMessage message) {
         URL url;
         try {
             url = new URL(message.getUrl());
         } catch (MalformedURLException e) {
-            LOG.error("Failed to add message to queue due to malformed url { url: \"{}\"}", message.getUrl());
-            return;
+            LOG.error("Failed to add message to queue due to malformed url { url: \"{}\" }", message.getUrl());
+            return LinkProcessStatus.MALFORMED_URL;
         }
 
         Document pageBody = getPageBody(url);
@@ -58,21 +56,22 @@ public class CrawlingService {
                 .collect(Collectors.toList());
 
         validUrls = validUrls.stream()
-                .filter(validUrl -> savedUniqueUrl(validUrl, message.getUrl()))
+                .filter(validUrl -> linkClient.save(validUrl, message.getUrl()))
                 .collect(Collectors.toList());
 
-        LOG.info("Parsed links for page { url:\"{}\"}", url);
+        LOG.info("Parsed links for page { url:\"{}\" }", url);
 
         validUrls.stream()
-                .map(this::assembleCrawlQueueMessage)
+                .map(this::assembleQueueMessage)
                 .forEach(this::addToQueue);
 
-        LOG.info("Added new urls to queue { urlCount: {}}", validUrls.size());
+        LOG.info("Added new messages to queue { queue: \"{}\", urlCount: {}}", MessageQueueConfiguration.LINK_PROCESSING_QUEUE, validUrls.size());
+
+        return LinkProcessStatus.SUCCESS;
     }
 
     private Document getPageBody(URL url) {
         String pageBody = redditEndpoint.getForObject(url.toString(), String.class);
-
         return Jsoup.parse(pageBody);
     }
 
@@ -80,14 +79,10 @@ public class CrawlingService {
         return element.attr("abs:href");
     }
 
-    private CrawlQueueMessage assembleCrawlQueueMessage(String url) {
-        CrawlQueueMessage crawlQueueMessage = new CrawlQueueMessage();
-        crawlQueueMessage.setUrl(url);
-        return crawlQueueMessage;
-    }
-
-    private ArrayList<String> removeDuplicates(List<String> validUrls) {
-        return Lists.newArrayList(Sets.newHashSet(validUrls));
+    private LinkQueueMessage assembleQueueMessage(String url) {
+        LinkQueueMessage linkQueueMessage = new LinkQueueMessage();
+        linkQueueMessage.setUrl(url);
+        return linkQueueMessage;
     }
 
     private boolean isRedditUrl(String url) {
@@ -100,11 +95,8 @@ public class CrawlingService {
         return relativeUrl || absoluteUrl;
     }
 
-    private void addToQueue(CrawlQueueMessage newMessage) {
-        rabbitTemplate.convertAndSend("crawl-queue", newMessage);
+    private void addToQueue(LinkQueueMessage newMessage) {
+        rabbitTemplate.convertAndSend(MessageQueueConfiguration.LINK_PROCESSING_QUEUE, newMessage);
     }
 
-    private boolean savedUniqueUrl(String url, String sourceUrl) {
-        return linkClient.saveUnique(url, sourceUrl);
-    }
 }

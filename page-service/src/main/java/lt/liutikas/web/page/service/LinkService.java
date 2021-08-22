@@ -43,7 +43,7 @@ public class LinkService {
         Link sourceLink = upsertLink(createLinkDto.getSourceUrl());
         saveConnection(link, sourceLink);
 
-        LOG.info("Saved new link { url: \"{}\", \"{}\"}", createLinkDto.getUrl(), createLinkDto.getSourceUrl());
+        LOG.info("Saved new link { url: \"{}\", \"{}\" }", createLinkDto.getUrl(), createLinkDto.getSourceUrl());
         return link;
     }
 
@@ -52,7 +52,7 @@ public class LinkService {
 
         if (duplicatedUrls) {
             throw new BadRequestException(String.format(
-                    "Urls must be distinct { url: \"%s\", sourceUrl: \"%s\"}",
+                    "Urls must be distinct { url: \"%s\", sourceUrl: \"%s\" }",
                     createLinkDto.getUrl(), createLinkDto.getSourceUrl()));
         }
     }

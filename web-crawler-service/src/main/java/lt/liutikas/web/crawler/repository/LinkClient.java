@@ -21,7 +21,7 @@ public class LinkClient {
         this.pageServiceEndpoint = restTemplate;
     }
 
-    public boolean saveUnique(String url, String sourceUrl) {
+    public boolean save(String url, String sourceUrl) {
         CreateLinkDto createLinkDto = new CreateLinkDto();
         createLinkDto.setUrl(url);
         createLinkDto.setSourceUrl(sourceUrl);

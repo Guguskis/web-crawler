@@ -52,10 +52,10 @@ public class PageService {
         Optional<Page> page = pageRepository.findById(id);
 
         if (page.isEmpty()) {
-            throw new NotFoundException(String.format("Page not found { id: \"%s\"}", id));
+            throw new NotFoundException(String.format("Page not found { id: \"%s\" }", id));
         }
 
-        LOG.info(String.format("Page returned { id: \"%s\"}", id));
+        LOG.info(String.format("Page returned { id: \"%s\" }", id));
 
         return page.get();
     }
@@ -66,7 +66,7 @@ public class PageService {
 
         Page createdPage = pageRepository.save(page); // todo throw BAD_REQUEST if URL not unique
 
-        LOG.info(String.format("Page created { id: \"%s\"}", createdPage.getId()));
+        LOG.info(String.format("Page created { id: \"%s\" }", createdPage.getId()));
         return pageAssembler.assembleNoBodyPage(createdPage);
     }
 

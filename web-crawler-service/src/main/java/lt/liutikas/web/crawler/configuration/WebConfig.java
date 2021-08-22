@@ -41,7 +41,7 @@ public class WebConfig {
 
     @Bean
     public Queue crawlingQueue() {
-        return new Queue("crawl-queue", false);
+        return new Queue(MessageQueueConfiguration.LINK_PROCESSING_QUEUE, false);
     }
 
     @Bean
