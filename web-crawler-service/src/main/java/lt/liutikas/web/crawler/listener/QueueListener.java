@@ -4,6 +4,7 @@ import lt.liutikas.web.crawler.configuration.MessageQueueConfiguration;
 import lt.liutikas.web.crawler.dto.LinkQueueMessage;
 import lt.liutikas.web.crawler.model.LinkProcessStatus;
 import lt.liutikas.web.crawler.service.LinkProcessor;
+import lt.liutikas.web.crawler.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -24,6 +25,8 @@ public class QueueListener implements Serializable {
 
     @RabbitListener(queues = MessageQueueConfiguration.LINK_PROCESSING_QUEUE)
     public void listen(LinkQueueMessage message) {
+        Timer timer = new Timer();
+        timer.start();
 
         LOG.info("Found new message { queue: \"{}\", url: \"{}\" }",
                 MessageQueueConfiguration.LINK_PROCESSING_QUEUE, message.getUrl());
@@ -37,8 +40,8 @@ public class QueueListener implements Serializable {
             status = LinkProcessStatus.FAILED_UNKNOWN;
         }
 
-        LOG.info("Finished processing message { queue: \"{}\", status: {}, url: \"{}\" }",
-                MessageQueueConfiguration.LINK_PROCESSING_QUEUE, status, message.getUrl());
+        LOG.info("Finished processing message { queue: \"{}\", status: {}, durationMilli: {}, url: \"{}\" }",
+                MessageQueueConfiguration.LINK_PROCESSING_QUEUE, status, timer.elapsedMilli(), message.getUrl());
     }
 
 }
