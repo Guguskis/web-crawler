@@ -1,17 +1,10 @@
-package lt.liutikas.web.page.model;
-
-import nonapi.io.github.classgraph.json.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+package lt.liutikas.web.crawler.model;
 
 import java.net.URL;
 
-@Document
 public class Link {
 
-    @Id
     private String id;
-    @Indexed(unique = true)
     private URL url;
 
     public String getId() {

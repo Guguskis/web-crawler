@@ -23,6 +23,8 @@ public class CrawlListener implements Serializable {
     @RabbitListener(queues = "crawl-queue")
     public void listen(CrawlQueueMessage message) {
 
+        LOG.info("Found new message { queue: \"crawl-queue\", url: \"{}\"}", message.getUrl());
+
         crawlingService.processPage(message);
 
         LOG.info("Page parsed successfully { url : \"{}\"}", message.getUrl());

@@ -4,12 +4,12 @@ import lt.liutikas.web.crawler.dto.CreatePageDto;
 import lt.liutikas.web.crawler.dto.NoBodyPageDto;
 import lt.liutikas.web.crawler.dto.UpdatePageDto;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
-@Repository
+@Component
 public class PageClient {
 
     private final RestTemplate restTemplate;

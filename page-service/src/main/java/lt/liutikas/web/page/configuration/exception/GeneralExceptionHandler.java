@@ -1,5 +1,7 @@
 package lt.liutikas.web.page.configuration.exception;
 
+import com.mongodb.ErrorCategory;
+import com.mongodb.MongoWriteException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -45,6 +47,19 @@ public class GeneralExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setErrorMessage(ex.getMessage());
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(MongoWriteException.class)
+    public ResponseEntity<ErrorResponse> authorizationException(MongoWriteException ex) {
+        ErrorResponse errorResponse = new ErrorResponse();
+
+        boolean duplicateUrl = ex.getError().getCategory().equals(ErrorCategory.DUPLICATE_KEY);
+        if (duplicateUrl) {
+            errorResponse.setErrorMessage(ex.getMessage());
+        } else {
+            throw ex;
+        }
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     private String processFieldErrorsMessage(MethodArgumentNotValidException ex) {

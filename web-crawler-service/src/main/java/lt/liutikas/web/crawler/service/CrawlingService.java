@@ -3,11 +3,11 @@ package lt.liutikas.web.crawler.service;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import lt.liutikas.web.crawler.dto.CrawlQueueMessage;
+import lt.liutikas.web.crawler.repository.LinkClient;
 import lt.liutikas.web.crawler.repository.PageClient;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -19,7 +19,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,11 +30,13 @@ public class CrawlingService {
     private final RabbitTemplate rabbitTemplate;
     private final PageClient pageClient;
     private final RestTemplate redditEndpoint;
+    private final LinkClient linkClient;
 
-    public CrawlingService(RabbitTemplate rabbitTemplate, PageClient pageClient, @Qualifier("reddit") RestTemplate restTemplate) {
+    public CrawlingService(RabbitTemplate rabbitTemplate, PageClient pageClient, @Qualifier("reddit") RestTemplate restTemplate, LinkClient linkClient) {
         this.rabbitTemplate = rabbitTemplate;
         this.pageClient = pageClient;
         this.redditEndpoint = restTemplate;
+        this.linkClient = linkClient;
     }
 
     public void processPage(CrawlQueueMessage message) {
@@ -47,35 +48,36 @@ public class CrawlingService {
             return;
         }
 
-        String pageBody = redditEndpoint.getForObject(message.getUrl(), String.class);
+        Document pageBody = getPageBody(url);
 
-        Document document = Jsoup.parse(pageBody);
-
-        Elements hrefElements = document.getElementsByAttribute("href");
-        List<String> validUrls = hrefElements.stream()
-                .map(parseLinks())
+        List<String> validUrls = pageBody
+                .getElementsByAttribute("href").stream()
+                .map(this::parseUrl)
                 .filter(this::isCrawlableUrl)
-                .map(makeAbsolute(url))
                 .filter(this::isRedditUrl)
                 .collect(Collectors.toList());
 
-        validUrls = removeDuplicates(validUrls);
-
-        List<CrawlQueueMessage> crawlQueueMessages = validUrls.stream()
-                .map(this::assembleCrawlQueueMessage)
+        validUrls = validUrls.stream()
+                .filter(validUrl -> savedUniqueUrl(validUrl, message.getUrl()))
                 .collect(Collectors.toList());
 
-        crawlQueueMessages.forEach(this::addToQueue);
+        LOG.info("Parsed links for page { url:\"{}\"}", url);
 
-        LOG.info("Processed page { url:\"{}\", urlCount: {}}", url, validUrls.size());
+        validUrls.stream()
+                .map(this::assembleCrawlQueueMessage)
+                .forEach(this::addToQueue);
+
+        LOG.info("Added new urls to queue { urlCount: {}}", validUrls.size());
     }
 
-    private Function<String, String> makeAbsolute(URL url) {
-        return unprocessedUrl -> convertToAbsoluteUrl(url, unprocessedUrl);
+    private Document getPageBody(URL url) {
+        String pageBody = redditEndpoint.getForObject(url.toString(), String.class);
+
+        return Jsoup.parse(pageBody);
     }
 
-    private Function<Element, String> parseLinks() {
-        return element -> element.attr("href");
+    private String parseUrl(Element element) {
+        return element.attr("abs:href");
     }
 
     private CrawlQueueMessage assembleCrawlQueueMessage(String url) {
@@ -88,35 +90,8 @@ public class CrawlingService {
         return Lists.newArrayList(Sets.newHashSet(validUrls));
     }
 
-    private boolean isRedditUrl(String urlString) {
-        URL url;
-
-        try {
-            url = new URL(urlString);
-        } catch (MalformedURLException e) {
-            LOG.warn("Malformed url { url: \"{}\"}", urlString);
-            return false;
-        }
-
-        String host = url.getHost();
-        return host.contains("reddit.com");
-    }
-
-    private String convertToAbsoluteUrl(URL baseUrl, String url) {
-
-        String protocol = baseUrl.getProtocol() + "://";
-        String baseUrlString = protocol + baseUrl.getHost();
-
-        boolean isProtocolAgnostic = url.startsWith("//");
-        boolean isRelative = url.startsWith("/");
-
-        if (isProtocolAgnostic) {
-            url = protocol + url.substring(2);
-        } else if (isRelative) {
-            url = baseUrlString + url;
-        }
-
-        return url;
+    private boolean isRedditUrl(String url) {
+        return url.contains("reddit.com");
     }
 
     private boolean isCrawlableUrl(String url) {
@@ -127,5 +102,9 @@ public class CrawlingService {
 
     private void addToQueue(CrawlQueueMessage newMessage) {
         rabbitTemplate.convertAndSend("crawl-queue", newMessage);
+    }
+
+    private boolean savedUniqueUrl(String url, String sourceUrl) {
+        return linkClient.saveUnique(url, sourceUrl);
     }
 }

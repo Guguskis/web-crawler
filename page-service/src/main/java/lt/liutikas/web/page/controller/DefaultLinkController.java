@@ -7,8 +7,6 @@ import lt.liutikas.web.page.service.LinkService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 public class DefaultLinkController implements LinkController {
 
@@ -18,8 +16,13 @@ public class DefaultLinkController implements LinkController {
         this.linkService = linkService;
     }
 
+//    @Override
+//    public ResponseEntity<List<Link>> saveUniqueLinks(List<CreateLinkDto> createLinkDtos) {
+//        return ResponseEntity.ok(linkService.saveUniqueLinks(createLinkDtos));
+//    }
+
     @Override
-    public ResponseEntity<List<Link>> saveUniqueLinks(List<CreateLinkDto> createLinkDtos) {
-        return ResponseEntity.ok(linkService.saveUniqueLinks(createLinkDtos));
+    public ResponseEntity<Link> saveLink(CreateLinkDto createLinkDto) {
+        return ResponseEntity.ok(linkService.saveLink(createLinkDto));
     }
 }
